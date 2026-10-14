@@ -88,6 +88,20 @@
   @keyframes zz { 0% { opacity: 0; transform: translateY(6px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px); } }
   @media (prefers-reduced-motion: reduce) { .dog * { animation: none !important; } .dog .zz { opacity: 1; } }
 
+  /* speech bubble */
+  .bubble { position: relative; max-width: 340px; text-wrap: balance; min-height: 60px; margin: 4px auto 16px; padding: 12px 18px; background: var(--card);
+    border: 2px solid var(--line); border-radius: 22px; font-weight: 900; font-size: 16px; line-height: 1.5; color: var(--ink);
+    display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .bubble::after { content: ""; position: absolute; left: 50%; bottom: -9px; width: 14px; height: 14px; background: var(--card);
+    border-right: 2px solid var(--line); border-bottom: 2px solid var(--line); transform: translateX(-50%) rotate(45deg); }
+  .bubble.pop { animation: pop .4s ease-out; }
+  @keyframes pop { 0% { transform: scale(.9); opacity: .3; } 60% { transform: scale(1.04); opacity: 1; } 100% { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .bubble.pop { animation: none; } }
+  .dog { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .dog[data-state="sleep"] { height: 236px; }
+  .dog[data-state="sleep"] .zz { top: 18px; }
+  .dog[data-state="sleep"] .zz2 { top: 0; }
+
   .status { font-size: 20px; font-weight: 900; margin: 0; }
   .clock { font-size: 52px; font-weight: 900; line-height: 1.15; margin: 2px 0 0; font-variant-numeric: tabular-nums; }
   .sub { color: var(--muted); margin: 4px 0 0; font-size: 14px; }
@@ -144,6 +158,7 @@
 <body>
 <main>
   <section class="hero" aria-live="polite">
+    <div class="bubble" id="bubble" role="button" tabindex="0" aria-label="犬のひとこと(タップで次のセリフ)"><span id="bubbleText">ワン！</span></div>
     <div class="dog" id="dog" data-state="sleep" role="img" aria-label="アプリコット色のトイプードル">
       <div class="walk">
         <div class="ground"></div><div class="shade"></div>
@@ -247,6 +262,50 @@
     state.records[key].sort(function (a, b) { return a.start < b.start ? -1 : 1; });
   }
 
+  // --- Dog talk: lines depend on time of day and on whether you are studying ---
+  var MSG = {
+    morning: ["あさが来たワン！今日もよろしくワン", "おはようワン！いっしょにがんばるワン", "朝ごはん食べたワン？ 元気にいくワン", "いい朝だワン！しっぽがとまらないワン"],
+    noon: ["お昼だワン。ゆっくり仕事休んでワン", "ごはんの時間だワン。ちゃんと休んでワン", "ちょっと伸びをするワン。のんびりしてワン", "お昼寝したいワン…いっしょに休むワン"],
+    evening: ["夕方だワン。もうひとがんばりだワン", "今日もあとちょっとだワン。ついてるワン", "おなかすいてきたワン。もうすぐ終わりだワン"],
+    night: ["お仕事おつかれワン！一緒に遊んでワン", "今日もよくがんばったワン。なでてほしいワン", "おつかれさまワン。ゆっくりしようワン", "おかえりワン！待ってたワン"],
+    late: ["夜ふかしさんだワン。そろそろ寝るワン", "むにゃむにゃ…もう寝る時間だワン", "ねむいワン…いっしょに寝るワン"],
+    study: ["いっしょに歩くワン！", "えらいワン！その調子だワン", "集中してるワン。かっこいいワン", "ゆっくりでいいワン。ついてくワン"],
+    studyLate: ["こんな時間までえらいワン。むりしないでワン", "夜おそいワン。きりのいいところで休むワン"],
+    done: ["おつかれさまだワン！ゆっくり休んでワン", "よくがんばったワン！えらいワン", "ひと休みするワン。なでてワン"],
+    goal: ["目標たっせいだワン！すごいワン！"]
+  };
+  var lastSay = 0, lastSt = null, goalSaid = false;
+  function slot() {
+    var h = new Date().getHours();
+    return h >= 5 && h < 11 ? "morning" : h >= 11 && h < 15 ? "noon" : h >= 15 && h < 18 ? "evening" : h >= 18 ? "night" : "late";
+  }
+  function listFor(st) {
+    if (st === "walk") { var h = new Date().getHours(); return (h >= 23 || h < 5) ? MSG.study.concat(MSG.studyLate) : MSG.study; }
+    return MSG[slot()];
+  }
+  function pickFrom(list) {
+    var cur = $("bubbleText").textContent;
+    var c = list.filter(function (x) { return x !== cur; });
+    if (!c.length) c = list;
+    return c[Math.floor(Math.random() * c.length)];
+  }
+  function say(text) {
+    var b = $("bubble"); $("bubbleText").textContent = text;
+    b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
+    lastSay = Date.now();
+  }
+  function onState(st, todayMin, goalMin) {
+    if (st !== lastSt) {
+      lastSt = st;
+      goalSaid = goalMin > 0 && todayMin >= goalMin;
+      say(pickFrom(listFor(st)));
+    }
+    if (st === "walk" && goalMin > 0) {
+      if (todayMin >= goalMin && !goalSaid) { goalSaid = true; say(pickFrom(MSG.goal)); }
+      else if (todayMin < goalMin) goalSaid = false;
+    }
+  }
+
   function renderHero() {
     var now = new Date(), dog = $("dog");
     var todayMin = dayTotal(dkey(now));
@@ -271,6 +330,7 @@
     var show = goalMin > 0;
     $("barWrap").style.display = show ? "block" : "none";
     if (show) $("bar").style.width = Math.min(100, todayMin / goalMin * 100) + "%";
+    onState(state.active ? "walk" : "sleep", todayMin, goalMin);
   }
 
   function renderMonth() {
@@ -315,7 +375,7 @@
       var start = new Date(state.active.ts), now = new Date();
       var min = Math.max(1, Math.round((now - start) / 60000));
       addSession(dkey(start), { start: hm(start), end: hm(now), min: min });
-      state.active = null; save(); renderAll(); toast("記録しました(" + fmt(min) + ")");
+      state.active = null; save(); renderAll(); toast("記録しました(" + fmt(min) + ")"); say(pickFrom(MSG.done));
     } else {
       state.active = { ts: Date.now() }; save(); renderAll();
     }
@@ -370,6 +430,12 @@
     var v = Number(this.value);
     if (v >= 0 && v <= 24) { state.goal = v; save(); renderHero(); } else this.value = state.goal;
   });
+
+  function nextLine() { say(pickFrom(listFor(lastSt))); }
+  $("bubble").addEventListener("click", nextLine);
+  $("bubble").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nextLine(); } });
+  $("dog").addEventListener("click", nextLine);
+  setInterval(function () { if (Date.now() - lastSay > 40000) nextLine(); }, 10000);
 
   load();
   $("setGoal").value = state.goal;
