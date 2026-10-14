@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>犬勤怠</title>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="犬勤怠">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#EEF3EF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EEF3EF;
+    --card: #FFFFFF;
+    --ink: #1B2B26;
+    --muted: #5E7068;
+    --line: #D5DFD9;
+    --leaf: #2F6B4F;
+    --leaf-ink: #FFFFFF;
+    --biscuit: #C9892F;
+    --alert: #B4432F;
+    --apricot: #EDBF8C;
+    --apricot-light: #F6D9B5;
+    --apricot-dark: #D9A36A;
+    --dog-dark: #3A2A22;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #121C18; --card: #1B2924; --ink: #E9F1EC; --muted: #93A89D;
+      --line: #2C3D36; --leaf: #6FCB9A; --leaf-ink: #0E1A15; --biscuit: #E8B04A; --alert: #F08A74;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #121C18; --card: #1B2924; --ink: #E9F1EC; --muted: #93A89D;
+    --line: #2C3D36; --leaf: #6FCB9A; --leaf-ink: #0E1A15; --biscuit: #E8B04A; --alert: #F08A74;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+    font-size: 16px; line-height: 1.6; -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 480px; margin: 0 auto; padding: 16px 16px 56px; }
+  button, input { font: inherit; color: inherit; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--biscuit); outline-offset: 2px; }
+
+  /* Hero */
+  .hero { text-align: center; padding: 4px 0 16px; }
+  .dog { width: 100%; max-width: 300px; height: auto; display: block; margin: 0 auto 4px; overflow: visible; }
+  .dog .walk, .dog .sleep { display: none; }
+  .dog[data-state="walk"] .walk { display: block; }
+  .dog[data-state="sleep"] .sleep { display: block; }
+
+  .dog .ground { stroke: var(--line); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 18 22; animation: ground 0.7s linear infinite; }
+  @keyframes ground { to { stroke-dashoffset: 40; } }
+  .dog .bob { animation: bob 0.7s ease-in-out infinite; }
+  @keyframes bob { 0%, 50%, 100% { transform: translateY(0); } 25%, 75% { transform: translateY(-3px); } }
+  .dog .leg { animation: swing 0.7s ease-in-out infinite alternate; }
+  .dog .l1 { transform-origin: 84px 124px; }
+  .dog .l2 { transform-origin: 104px 124px; animation-direction: alternate-reverse; }
+  .dog .l3 { transform-origin: 146px 124px; animation-direction: alternate-reverse; }
+  .dog .l4 { transform-origin: 166px 124px; }
+  @keyframes swing { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+  .dog .tailpom { transform-origin: 66px 100px; animation: wag 0.5s ease-in-out infinite alternate; }
+  @keyframes wag { from { transform: rotate(-8deg); } to { transform: rotate(10deg); } }
+  .dog .breath { transform-origin: 110px 160px; animation: breathe 3.2s ease-in-out infinite; }
+  @keyframes breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.035); } }
+  .dog .zz { animation: zz 3.2s ease-in-out infinite; }
+  .dog .zz2 { animation-delay: 1.2s; }
+  @keyframes zz { 0% { opacity: 0; transform: translateY(6px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px); } }
+  @media (prefers-reduced-motion: reduce) { .dog * { animation: none !important; } .dog .zz { opacity: 1; } }
+
+  .status { font-size: 20px; font-weight: 900; margin: 0; }
+  .clock { font-size: 52px; font-weight: 900; line-height: 1.15; margin: 2px 0 0; font-variant-numeric: tabular-nums; }
+  .sub { color: var(--muted); margin: 4px 0 0; font-size: 14px; }
+  .bar { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; margin: 10px auto 0; max-width: 240px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--leaf); border-radius: 999px; transition: width .4s; }
+
+  .actions { margin: 8px 0 24px; }
+  .btn {
+    border: 2px solid var(--leaf); background: transparent; color: var(--leaf);
+    border-radius: 16px; padding: 16px 8px; font-weight: 900; font-size: 18px; cursor: pointer; min-height: 56px; width: 100%;
+  }
+  .btn.primary { background: var(--leaf); color: var(--leaf-ink); }
+  .btn:active { transform: translateY(1px); }
+
+  .month-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .month-head h2 { margin: 0; font-size: 20px; font-weight: 900; }
+  .nav { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); cursor: pointer; font-size: 18px; }
+
+  .totals { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--card); border: 1px solid var(--line); border-radius: 16px; margin-bottom: 16px; }
+  .totals div { padding: 12px 8px; text-align: center; }
+  .totals div + div { border-left: 1px solid var(--line); }
+  .totals .n { font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .totals .l { font-size: 12px; color: var(--muted); }
+
+  .days { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .day { padding: 10px 14px 6px; border-bottom: 1px solid var(--line); }
+  .days li:last-child { border-bottom: 0; }
+  .day-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 900; }
+  .day-head small { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 4px; }
+  .day-head .tot { font-variant-numeric: tabular-nums; }
+  .sess { display: flex; justify-content: space-between; width: 100%; padding: 8px 0; border: 0; background: transparent; text-align: left; cursor: pointer; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .sess:hover { color: var(--ink); }
+  .empty { padding: 28px 16px; text-align: center; color: var(--muted); }
+  .add { margin-top: 12px; }
+
+  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: flex-end; justify-content: center; z-index: 10; }
+  .scrim.open { display: flex; }
+  .sheet { background: var(--card); width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)); }
+  .sheet h3 { margin: 0 0 12px; font-size: 18px; font-weight: 900; }
+  .field { display: grid; gap: 4px; margin-bottom: 12px; }
+  .field label { font-size: 13px; color: var(--muted); }
+  .field input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); font-size: 17px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .sheet-actions { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .sheet-actions .btn { padding: 12px 14px; font-size: 16px; }
+  .btn.danger { border-color: var(--alert); color: var(--alert); }
+
+  .settings { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .settings h2 { font-size: 16px; font-weight: 900; margin: 0 0 12px; }
+  .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 999px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<main>
+  <section class="hero" aria-live="polite">
+    <svg class="dog" id="dog" data-state="sleep" viewBox="0 0 240 190" role="img" aria-label="アプリコット色のふわふわトイプードル">
+<g class="walk">
+  <line class="ground" x1="10" y1="174" x2="230" y2="174"/>
+  <g class="bob">
+    <g class="leg l1"><line x1="84" y1="124" x2="84" y2="152" stroke="#DDB583" stroke-width="13" stroke-linecap="round"/><g><ellipse cx="84" cy="158" rx="11" ry="8" fill="#DDB583"/><circle cx="94.8" cy="159.6" r="5.1" fill="#DDB583"/><circle cx="90.1" cy="164.7" r="6.0" fill="#DDB583"/><circle cx="81.8" cy="165.8" r="6.9" fill="#DDB583"/><circle cx="74.8" cy="162.4" r="5.5" fill="#DDB583"/><circle cx="73.2" cy="156.4" r="6.4" fill="#DDB583"/><circle cx="77.9" cy="151.3" r="5.1" fill="#DDB583"/><circle cx="86.2" cy="150.2" r="6.0" fill="#DDB583"/><circle cx="93.2" cy="153.6" r="6.9" fill="#DDB583"/></g></g><g class="leg l2"><line x1="104" y1="124" x2="104" y2="152" stroke="#DDB583" stroke-width="13" stroke-linecap="round"/><g><ellipse cx="104" cy="158" rx="11" ry="8" fill="#DDB583"/><circle cx="114.8" cy="159.6" r="5.1" fill="#DDB583"/><circle cx="110.1" cy="164.7" r="6.0" fill="#DDB583"/><circle cx="101.8" cy="165.8" r="6.9" fill="#DDB583"/><circle cx="94.8" cy="162.4" r="5.5" fill="#DDB583"/><circle cx="93.2" cy="156.4" r="6.4" fill="#DDB583"/><circle cx="97.9" cy="151.3" r="5.1" fill="#DDB583"/><circle cx="106.2" cy="150.2" r="6.0" fill="#DDB583"/><circle cx="113.2" cy="153.6" r="6.9" fill="#DDB583"/></g></g>
+    <g class="tailpom"><line x1="68" y1="100" x2="56" y2="78" stroke="#DDB583" stroke-width="8" stroke-linecap="round"/><g><ellipse cx="52" cy="66" rx="8" ry="8" fill="#F6E3C3"/><circle cx="59.8" cy="67.6" r="6.8" fill="#F6E3C3"/><circle cx="57.0" cy="72.3" r="8.0" fill="#F6E3C3"/><circle cx="51.8" cy="74.0" r="9.2" fill="#F6E3C3"/><circle cx="46.7" cy="72.0" r="7.4" fill="#F6E3C3"/><circle cx="44.1" cy="67.2" r="8.6" fill="#F6E3C3"/><circle cx="45.2" cy="61.8" r="6.8" fill="#F6E3C3"/><circle cx="49.5" cy="58.4" r="8.0" fill="#F6E3C3"/><circle cx="54.9" cy="58.6" r="9.2" fill="#F6E3C3"/><circle cx="59.0" cy="62.2" r="7.4" fill="#F6E3C3"/><circle cx="50.9" cy="68.2" r="5.5" fill="#FFF3DC" opacity="0.40"/><circle cx="56.3" cy="68.1" r="4.6" fill="#FFF3DC" opacity="0.40"/><circle cx="56.3" cy="67.7" r="3.6" fill="#FFF3DC" opacity="0.40"/><circle cx="50.2" cy="66.8" r="3.8" fill="#FFF3DC" opacity="0.40"/><circle cx="46.2" cy="69.0" r="3.9" fill="#FFF3DC" opacity="0.40"/><circle cx="52.9" cy="71.3" r="6.3" fill="#FFF3DC" opacity="0.40"/><circle cx="48.5" cy="64.1" r="6.4" fill="#FFF3DC" opacity="0.40"/><circle cx="58.5" cy="67.9" r="4.4" fill="#FFF3DC" opacity="0.40"/><circle cx="53.4" cy="67.8" r="4.4" fill="#FFF3DC" opacity="0.40"/><circle cx="53.4" cy="62.9" r="3.7" fill="#B98A5A" opacity="0.18"/><circle cx="49.1" cy="62.6" r="3.6" fill="#B98A5A" opacity="0.18"/><circle cx="54.5" cy="67.1" r="2.9" fill="#B98A5A" opacity="0.18"/><circle cx="50.0" cy="61.7" r="3.1" fill="#B98A5A" opacity="0.18"/></g></g>
+    <g><ellipse cx="116" cy="106" rx="56" ry="28" fill="#DDB583"/><circle cx="170.9" cy="111.6" r="11.9" fill="#DDB583"/><circle cx="164.8" cy="119.8" r="14.0" fill="#DDB583"/><circle cx="153.9" cy="126.6" r="16.1" fill="#DDB583"/><circle cx="139.3" cy="131.5" r="12.9" fill="#DDB583"/><circle cx="122.4" cy="133.8" r="15.0" fill="#DDB583"/><circle cx="104.9" cy="133.4" r="11.9" fill="#DDB583"/><circle cx="88.5" cy="130.4" r="14.0" fill="#DDB583"/><circle cx="74.7" cy="124.9" r="16.1" fill="#DDB583"/><circle cx="65.1" cy="117.6" r="12.9" fill="#DDB583"/><circle cx="60.4" cy="109.2" r="15.0" fill="#DDB583"/><circle cx="61.1" cy="100.4" r="11.9" fill="#DDB583"/><circle cx="67.2" cy="92.2" r="14.0" fill="#DDB583"/><circle cx="78.1" cy="85.4" r="16.1" fill="#DDB583"/><circle cx="92.7" cy="80.5" r="12.9" fill="#DDB583"/><circle cx="109.6" cy="78.2" r="15.0" fill="#DDB583"/><circle cx="127.1" cy="78.6" r="11.9" fill="#DDB583"/><circle cx="143.5" cy="81.6" r="14.0" fill="#DDB583"/><circle cx="157.3" cy="87.1" r="16.1" fill="#DDB583"/><circle cx="166.9" cy="94.4" r="12.9" fill="#DDB583"/><circle cx="171.6" cy="102.8" r="15.0" fill="#DDB583"/><circle cx="90.0" cy="98.3" r="4.4" fill="#FFF3DC" opacity="0.40"/><circle cx="127.2" cy="86.5" r="4.2" fill="#FFF3DC" opacity="0.40"/><circle cx="86.3" cy="98.5" r="6.1" fill="#FFF3DC" opacity="0.40"/><circle cx="113.0" cy="94.5" r="6.4" fill="#FFF3DC" opacity="0.40"/><circle cx="137.2" cy="115.7" r="5.8" fill="#FFF3DC" opacity="0.40"/><circle cx="134.3" cy="119.0" r="3.6" fill="#FFF3DC" opacity="0.40"/><circle cx="94.7" cy="87.1" r="5.2" fill="#FFF3DC" opacity="0.40"/><circle cx="133.3" cy="97.4" r="5.6" fill="#FFF3DC" opacity="0.40"/><circle cx="86.5" cy="96.1" r="4.9" fill="#FFF3DC" opacity="0.40"/><circle cx="143.3" cy="84.5" r="4.9" fill="#FFF3DC" opacity="0.40"/><circle cx="108.9" cy="100.1" r="5.6" fill="#FFF3DC" opacity="0.40"/><circle cx="84.1" cy="84.9" r="6.0" fill="#FFF3DC" opacity="0.40"/><circle cx="110.1" cy="119.4" r="5.5" fill="#FFF3DC" opacity="0.40"/><circle cx="146.3" cy="108.2" r="4.0" fill="#FFF3DC" opacity="0.40"/><circle cx="126.1" cy="110.6" r="5.8" fill="#FFF3DC" opacity="0.40"/><circle cx="130.9" cy="113.8" r="4.7" fill="#FFF3DC" opacity="0.40"/><circle cx="126.1" cy="100.7" r="4.8" fill="#FFF3DC" opacity="0.40"/><circle cx="70.0" cy="98.6" r="6.0" fill="#FFF3DC" opacity="0.40"/><circle cx="131.0" cy="97.4" r="4.7" fill="#FFF3DC" opacity="0.40"/><circle cx="85.5" cy="124.7" r="6.4" fill="#FFF3DC" opacity="0.40"/><circle cx="129.8" cy="115.6" r="3.0" fill="#B98A5A" opacity="0.18"/><circle cx="119.7" cy="123.8" r="3.7" fill="#B98A5A" opacity="0.18"/><circle cx="114.6" cy="114.5" r="3.3" fill="#B98A5A" opacity="0.18"/><circle cx="89.4" cy="120.3" r="4.4" fill="#B98A5A" opacity="0.18"/><circle cx="102.5" cy="88.8" r="3.7" fill="#B98A5A" opacity="0.18"/><circle cx="107.5" cy="97.5" r="4.3" fill="#B98A5A" opacity="0.18"/><circle cx="125.6" cy="80.9" r="4.1" fill="#B98A5A" opacity="0.18"/><circle cx="90.7" cy="116.2" r="2.7" fill="#B98A5A" opacity="0.18"/><circle cx="103.2" cy="98.8" r="2.6" fill="#B98A5A" opacity="0.18"/><circle cx="121.9" cy="117.2" r="3.2" fill="#B98A5A" opacity="0.18"/></g>
+    <g class="leg l3"><line x1="146" y1="124" x2="146" y2="152" stroke="#DDB583" stroke-width="13" stroke-linecap="round"/><g><ellipse cx="146" cy="158" rx="11" ry="8" fill="#DDB583"/><circle cx="156.8" cy="159.6" r="5.1" fill="#DDB583"/><circle cx="152.1" cy="164.7" r="6.0" fill="#DDB583"/><circle cx="143.8" cy="165.8" r="6.9" fill="#DDB583"/><circle cx="136.8" cy="162.4" r="5.5" fill="#DDB583"/><circle cx="135.2" cy="156.4" r="6.4" fill="#DDB583"/><circle cx="139.9" cy="151.3" r="5.1" fill="#DDB583"/><circle cx="148.2" cy="150.2" r="6.0" fill="#DDB583"/><circle cx="155.2" cy="153.6" r="6.9" fill="#DDB583"/></g></g><g class="leg l4"><line x1="166" y1="124" x2="166" y2="152" stroke="#DDB583" stroke-width="13" stroke-linecap="round"/><g><ellipse cx="166" cy="158" rx="11" ry="8" fill="#DDB583"/><circle cx="176.8" cy="159.6" r="5.1" fill="#DDB583"/><circle cx="172.1" cy="164.7" r="6.0" fill="#DDB583"/><circle cx="163.8" cy="165.8" r="6.9" fill="#DDB583"/><circle cx="156.8" cy="162.4" r="5.5" fill="#DDB583"/><circle cx="155.2" cy="156.4" r="6.4" fill="#DDB583"/><circle cx="159.9" cy="151.3" r="5.1" fill="#DDB583"/><circle cx="168.2" cy="150.2" r="6.0" fill="#DDB583"/><circle cx="175.2" cy="153.6" r="6.9" fill="#DDB583"/></g></g>
+    <g><ellipse cx="166" cy="94" rx="20" ry="24" fill="#DDB583"/><circle cx="185.6" cy="98.8" r="9.3" fill="#DDB583"/><circle cx="181.0" cy="109.9" r="11.0" fill="#DDB583"/><circle cx="172.4" cy="116.8" r="12.6" fill="#DDB583"/><circle cx="162.0" cy="117.5" r="10.2" fill="#DDB583"/><circle cx="152.8" cy="112.0" r="11.8" fill="#DDB583"/><circle cx="147.0" cy="101.6" r="9.3" fill="#DDB583"/><circle cx="146.4" cy="89.2" r="11.0" fill="#DDB583"/><circle cx="151.0" cy="78.1" r="12.6" fill="#DDB583"/><circle cx="159.6" cy="71.2" r="10.2" fill="#DDB583"/><circle cx="170.0" cy="70.5" r="11.8" fill="#DDB583"/><circle cx="179.2" cy="76.0" r="9.3" fill="#DDB583"/><circle cx="185.0" cy="86.4" r="11.0" fill="#DDB583"/><circle cx="169.8" cy="95.6" r="4.0" fill="#FFF3DC" opacity="0.40"/><circle cx="173.6" cy="100.8" r="3.6" fill="#FFF3DC" opacity="0.40"/><circle cx="175.3" cy="82.7" r="3.9" fill="#FFF3DC" opacity="0.40"/><circle cx="165.9" cy="105.1" r="4.6" fill="#FFF3DC" opacity="0.40"/><circle cx="178.0" cy="108.0" r="6.5" fill="#FFF3DC" opacity="0.40"/><circle cx="155.0" cy="96.9" r="3.8" fill="#FFF3DC" opacity="0.40"/><circle cx="173.3" cy="100.6" r="4.3" fill="#FFF3DC" opacity="0.40"/><circle cx="169.1" cy="87.2" r="3.6" fill="#FFF3DC" opacity="0.40"/><circle cx="177.4" cy="89.7" r="3.9" fill="#FFF3DC" opacity="0.40"/><circle cx="161.8" cy="92.6" r="5.1" fill="#FFF3DC" opacity="0.40"/><circle cx="182.8" cy="91.3" r="5.6" fill="#FFF3DC" opacity="0.40"/><circle cx="165.3" cy="105.4" r="4.0" fill="#FFF3DC" opacity="0.40"/><circle cx="167.8" cy="78.0" r="4.1" fill="#B98A5A" opacity="0.18"/><circle cx="161.6" cy="103.6" r="4.1" fill="#B98A5A" opacity="0.18"/><circle cx="183.9" cy="92.0" r="4.1" fill="#B98A5A" opacity="0.18"/><circle cx="172.8" cy="76.2" r="3.0" fill="#B98A5A" opacity="0.18"/><circle cx="155.1" cy="92.5" r="2.6" fill="#B98A5A" opacity="0.18"/><circle cx="175.8" cy="96.1" r="3.0" fill="#B98A5A" opacity="0.18"/></g>
+    <g><ellipse cx="188" cy="58" rx="30" ry="28" fill="#F6E3C3"/><circle cx="217.4" cy="63.6" r="11.9" fill="#F6E3C3"/><circle cx="213.6" cy="72.6" r="14.0" fill="#F6E3C3"/><circle cx="206.7" cy="79.9" r="16.1" fill="#F6E3C3"/><circle cx="197.5" cy="84.5" r="12.9" fill="#F6E3C3"/><circle cx="187.2" cy="86.0" r="15.0" fill="#F6E3C3"/><circle cx="177.0" cy="84.1" r="11.9" fill="#F6E3C3"/><circle cx="168.1" cy="79.0" r="14.0" fill="#F6E3C3"/><circle cx="161.6" cy="71.4" r="16.1" fill="#F6E3C3"/><circle cx="158.3" cy="62.2" r="12.9" fill="#F6E3C3"/><circle cx="158.6" cy="52.4" r="15.0" fill="#F6E3C3"/><circle cx="162.4" cy="43.4" r="11.9" fill="#F6E3C3"/><circle cx="169.3" cy="36.1" r="14.0" fill="#F6E3C3"/><circle cx="178.5" cy="31.5" r="16.1" fill="#F6E3C3"/><circle cx="188.8" cy="30.0" r="12.9" fill="#F6E3C3"/><circle cx="199.0" cy="31.9" r="15.0" fill="#F6E3C3"/><circle cx="207.9" cy="37.0" r="11.9" fill="#F6E3C3"/><circle cx="214.4" cy="44.6" r="14.0" fill="#F6E3C3"/><circle cx="217.7" cy="53.8" r="16.1" fill="#F6E3C3"/><circle cx="178.3" cy="34.0" r="4.8" fill="#FFF3DC" opacity="0.40"/><circle cx="214.0" cy="47.8" r="6.4" fill="#FFF3DC" opacity="0.40"/><circle cx="180.8" cy="65.7" r="4.2" fill="#FFF3DC" opacity="0.40"/><circle cx="191.5" cy="67.3" r="5.4" fill="#FFF3DC" opacity="0.40"/><circle cx="208.2" cy="44.4" r="4.9" fill="#FFF3DC" opacity="0.40"/><circle cx="174.3" cy="39.6" r="3.8" fill="#FFF3DC" opacity="0.40"/><circle cx="173.9" cy="37.1" r="5.8" fill="#FFF3DC" opacity="0.40"/><circle cx="188.0" cy="42.4" r="4.0" fill="#FFF3DC" opacity="0.40"/><circle cx="191.3" cy="45.8" r="5.9" fill="#FFF3DC" opacity="0.40"/><circle cx="202.7" cy="55.5" r="4.7" fill="#FFF3DC" opacity="0.40"/><circle cx="209.1" cy="51.2" r="4.0" fill="#FFF3DC" opacity="0.40"/><circle cx="194.6" cy="64.3" r="6.2" fill="#FFF3DC" opacity="0.40"/><circle cx="191.2" cy="49.9" r="6.0" fill="#FFF3DC" opacity="0.40"/><circle cx="208.6" cy="55.6" r="4.6" fill="#FFF3DC" opacity="0.40"/><circle cx="179.5" cy="55.5" r="3.5" fill="#FFF3DC" opacity="0.40"/><circle cx="208.3" cy="54.5" r="5.1" fill="#FFF3DC" opacity="0.40"/><circle cx="202.4" cy="52.0" r="6.1" fill="#FFF3DC" opacity="0.40"/><circle cx="192.9" cy="49.1" r="4.3" fill="#FFF3DC" opacity="0.40"/><circle cx="184.3" cy="70.6" r="3.7" fill="#B98A5A" opacity="0.18"/><circle cx="187.0" cy="74.6" r="2.8" fill="#B98A5A" opacity="0.18"/><circle cx="201.9" cy="49.8" r="3.4" fill="#B98A5A" opacity="0.18"/><circle cx="163.8" cy="44.9" r="3.3" fill="#B98A5A" opacity="0.18"/><circle cx="205.0" cy="49.0" r="3.6" fill="#B98A5A" opacity="0.18"/><circle cx="178.7" cy="56.7" r="3.4" fill="#B98A5A" opacity="0.18"/><circle cx="191.7" cy="65.7" r="4.1" fill="#B98A5A" opacity="0.18"/><circle cx="196.9" cy="73.6" r="4.0" fill="#B98A5A" opacity="0.18"/><circle cx="173.1" cy="52.9" r="3.5" fill="#B98A5A" opacity="0.18"/></g>
+    <g><ellipse cx="180" cy="30" rx="20" ry="8" fill="#F6E3C3"/><circle cx="199.6" cy="31.6" r="8.5" fill="#F6E3C3"/><circle cx="192.5" cy="36.3" r="10.0" fill="#F6E3C3"/><circle cx="179.5" cy="38.0" r="11.5" fill="#F6E3C3"/><circle cx="166.8" cy="36.0" r="9.2" fill="#F6E3C3"/><circle cx="160.2" cy="31.2" r="10.8" fill="#F6E3C3"/><circle cx="162.9" cy="25.8" r="8.5" fill="#F6E3C3"/><circle cx="173.6" cy="22.4" r="10.0" fill="#F6E3C3"/><circle cx="187.3" cy="22.6" r="11.5" fill="#F6E3C3"/><circle cx="197.6" cy="26.2" r="9.2" fill="#F6E3C3"/><circle cx="165.2" cy="27.8" r="3.8" fill="#FFF3DC" opacity="0.40"/><circle cx="172.8" cy="28.9" r="4.3" fill="#FFF3DC" opacity="0.40"/><circle cx="181.6" cy="25.4" r="5.2" fill="#FFF3DC" opacity="0.40"/><circle cx="181.1" cy="22.9" r="4.8" fill="#FFF3DC" opacity="0.40"/><circle cx="171.2" cy="27.0" r="5.0" fill="#FFF3DC" opacity="0.40"/><circle cx="176.2" cy="26.0" r="5.1" fill="#FFF3DC" opacity="0.40"/><circle cx="162.0" cy="31.0" r="5.6" fill="#FFF3DC" opacity="0.40"/><circle cx="192.9" cy="24.9" r="4.3" fill="#FFF3DC" opacity="0.40"/><circle cx="163.1" cy="27.3" r="6.0" fill="#FFF3DC" opacity="0.40"/><circle cx="185.0" cy="32.3" r="3.4" fill="#B98A5A" opacity="0.18"/><circle cx="188.4" cy="31.6" r="2.6" fill="#B98A5A" opacity="0.18"/><circle cx="171.8" cy="24.1" r="4.3" fill="#B98A5A" opacity="0.18"/><circle cx="189.1" cy="35.3" r="3.8" fill="#B98A5A" opacity="0.18"/></g>
+    <g><ellipse cx="212" cy="78" rx="13" ry="10" fill="#FBEFD9"/><circle cx="224.7" cy="80.0" r="6.0" fill="#FBEFD9"/><circle cx="220.8" cy="85.4" r="7.0" fill="#FBEFD9"/><circle cx="213.5" cy="87.9" r="8.0" fill="#FBEFD9"/><circle cx="205.6" cy="86.7" r="6.5" fill="#FBEFD9"/><circle cx="200.2" cy="82.2" r="7.5" fill="#FBEFD9"/><circle cx="199.3" cy="76.0" r="6.0" fill="#FBEFD9"/><circle cx="203.2" cy="70.6" r="7.0" fill="#FBEFD9"/><circle cx="210.5" cy="68.1" r="8.0" fill="#FBEFD9"/><circle cx="218.4" cy="69.3" r="6.5" fill="#FBEFD9"/><circle cx="223.8" cy="73.8" r="7.5" fill="#FBEFD9"/></g>
+    <path d="M205 86 Q211 100 218 86 Z" fill="#E9788C"/>
+    <ellipse cx="225" cy="73" rx="6.5" ry="5" fill="#4A403B"/><circle cx="223.5" cy="71.5" r="1.6" fill="#fff" opacity=".7"/>
+    <path d="M214 82 Q219 86 224 80" fill="none" stroke="#4A403B" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="203" cy="64" r="3.6" fill="#2E2420"/>
+    <g><ellipse cx="200" cy="54" rx="15" ry="7" fill="#F6E3C3"/><circle cx="214.7" cy="55.4" r="6.8" fill="#F6E3C3"/><circle cx="208.3" cy="59.8" r="8.0" fill="#F6E3C3"/><circle cx="197.0" cy="60.9" r="9.2" fill="#F6E3C3"/><circle cx="187.5" cy="57.9" r="7.4" fill="#F6E3C3"/><circle cx="185.3" cy="52.6" r="8.6" fill="#F6E3C3"/><circle cx="191.7" cy="48.2" r="6.8" fill="#F6E3C3"/><circle cx="203.0" cy="47.1" r="8.0" fill="#F6E3C3"/><circle cx="212.5" cy="50.1" r="9.2" fill="#F6E3C3"/></g>
+    <g><ellipse cx="170" cy="82" rx="12" ry="22" fill="#C89C69"/><circle cx="181.8" cy="86.4" r="7.6" fill="#C89C69"/><circle cx="179.0" cy="96.6" r="9.0" fill="#C89C69"/><circle cx="173.8" cy="102.9" r="10.3" fill="#C89C69"/><circle cx="167.6" cy="103.6" r="8.3" fill="#C89C69"/><circle cx="162.1" cy="98.5" r="9.7" fill="#C89C69"/><circle cx="158.6" cy="89.0" r="7.6" fill="#C89C69"/><circle cx="158.2" cy="77.6" r="9.0" fill="#C89C69"/><circle cx="161.0" cy="67.4" r="10.3" fill="#C89C69"/><circle cx="166.2" cy="61.1" r="8.3" fill="#C89C69"/><circle cx="172.4" cy="60.4" r="9.7" fill="#C89C69"/><circle cx="177.9" cy="65.5" r="7.6" fill="#C89C69"/><circle cx="181.4" cy="75.0" r="9.0" fill="#C89C69"/><circle cx="176.4" cy="96.8" r="6.4" fill="#E4C097" opacity="0.40"/><circle cx="172.1" cy="101.8" r="4.7" fill="#E4C097" opacity="0.40"/><circle cx="158.7" cy="83.7" r="6.0" fill="#E4C097" opacity="0.40"/><circle cx="173.3" cy="91.8" r="5.0" fill="#E4C097" opacity="0.40"/><circle cx="167.8" cy="88.5" r="4.5" fill="#E4C097" opacity="0.40"/><circle cx="169.6" cy="77.4" r="5.2" fill="#E4C097" opacity="0.40"/><circle cx="167.6" cy="83.7" r="4.5" fill="#E4C097" opacity="0.40"/><circle cx="165.0" cy="73.0" r="3.7" fill="#E4C097" opacity="0.40"/><circle cx="179.5" cy="80.4" r="6.4" fill="#E4C097" opacity="0.40"/><circle cx="173.8" cy="87.4" r="3.6" fill="#E4C097" opacity="0.40"/><circle cx="170.9" cy="73.3" r="3.9" fill="#E4C097" opacity="0.40"/><circle cx="160.6" cy="91.1" r="6.0" fill="#E4C097" opacity="0.40"/><circle cx="169.7" cy="90.9" r="4.3" fill="#B98A5A" opacity="0.18"/><circle cx="161.4" cy="74.5" r="2.7" fill="#B98A5A" opacity="0.18"/><circle cx="178.8" cy="88.1" r="3.4" fill="#B98A5A" opacity="0.18"/><circle cx="180.3" cy="91.3" r="3.8" fill="#B98A5A" opacity="0.18"/><circle cx="171.4" cy="74.5" r="4.2" fill="#B98A5A" opacity="0.18"/><circle cx="179.9" cy="90.1" r="3.4" fill="#B98A5A" opacity="0.18"/></g>
+  </g>
+</g>
+<g class="sleep">
+  <ellipse cx="120" cy="176" rx="92" ry="6" fill="var(--line)"/>
+  <g class="breath">
+    <g><ellipse cx="112" cy="140" rx="64" ry="28" fill="#DDB583"/><circle cx="174.7" cy="145.6" r="11.9" fill="#DDB583"/><circle cx="168.6" cy="153.1" r="14.0" fill="#DDB583"/><circle cx="157.9" cy="159.5" r="16.1" fill="#DDB583"/><circle cx="143.5" cy="164.4" r="12.9" fill="#DDB583"/><circle cx="126.5" cy="167.3" r="15.0" fill="#DDB583"/><circle cx="108.3" cy="168.0" r="11.9" fill="#DDB583"/><circle cx="90.5" cy="166.4" r="14.0" fill="#DDB583"/><circle cx="74.4" cy="162.7" r="16.1" fill="#DDB583"/><circle cx="61.3" cy="157.1" r="12.9" fill="#DDB583"/><circle cx="52.4" cy="150.2" r="15.0" fill="#DDB583"/><circle cx="48.2" cy="142.4" r="11.9" fill="#DDB583"/><circle cx="49.3" cy="134.4" r="14.0" fill="#DDB583"/><circle cx="55.4" cy="126.9" r="16.1" fill="#DDB583"/><circle cx="66.1" cy="120.5" r="12.9" fill="#DDB583"/><circle cx="80.5" cy="115.6" r="15.0" fill="#DDB583"/><circle cx="97.5" cy="112.7" r="11.9" fill="#DDB583"/><circle cx="115.7" cy="112.0" r="14.0" fill="#DDB583"/><circle cx="133.5" cy="113.6" r="16.1" fill="#DDB583"/><circle cx="149.6" cy="117.3" r="12.9" fill="#DDB583"/><circle cx="162.7" cy="122.9" r="15.0" fill="#DDB583"/><circle cx="171.6" cy="129.8" r="11.9" fill="#DDB583"/><circle cx="175.8" cy="137.6" r="14.0" fill="#DDB583"/><circle cx="91.1" cy="154.6" r="6.3" fill="#FFF3DC" opacity="0.40"/><circle cx="109.9" cy="148.3" r="5.1" fill="#FFF3DC" opacity="0.40"/><circle cx="113.3" cy="147.9" r="4.0" fill="#FFF3DC" opacity="0.40"/><circle cx="133.4" cy="143.1" r="4.4" fill="#FFF3DC" opacity="0.40"/><circle cx="95.3" cy="160.3" r="4.4" fill="#FFF3DC" opacity="0.40"/><circle cx="90.7" cy="140.0" r="4.5" fill="#FFF3DC" opacity="0.40"/><circle cx="136.7" cy="141.2" r="3.5" fill="#FFF3DC" opacity="0.40"/><circle cx="107.8" cy="122.9" r="4.1" fill="#FFF3DC" opacity="0.40"/><circle cx="55.1" cy="144.0" r="3.8" fill="#FFF3DC" opacity="0.40"/><circle cx="126.1" cy="126.7" r="5.0" fill="#FFF3DC" opacity="0.40"/><circle cx="128.1" cy="128.1" r="5.0" fill="#FFF3DC" opacity="0.40"/><circle cx="89.1" cy="115.8" r="4.5" fill="#FFF3DC" opacity="0.40"/><circle cx="135.1" cy="122.2" r="5.4" fill="#FFF3DC" opacity="0.40"/><circle cx="87.6" cy="147.3" r="3.7" fill="#FFF3DC" opacity="0.40"/><circle cx="123.1" cy="145.2" r="5.7" fill="#FFF3DC" opacity="0.40"/><circle cx="111.3" cy="149.0" r="3.8" fill="#FFF3DC" opacity="0.40"/><circle cx="141.6" cy="119.9" r="5.5" fill="#FFF3DC" opacity="0.40"/><circle cx="107.1" cy="150.5" r="4.4" fill="#FFF3DC" opacity="0.40"/><circle cx="92.3" cy="142.2" r="4.8" fill="#FFF3DC" opacity="0.40"/><circle cx="107.1" cy="165.7" r="6.4" fill="#FFF3DC" opacity="0.40"/><circle cx="88.5" cy="136.9" r="6.4" fill="#FFF3DC" opacity="0.40"/><circle cx="101.1" cy="152.2" r="3.5" fill="#FFF3DC" opacity="0.40"/><circle cx="82.2" cy="152.0" r="3.5" fill="#B98A5A" opacity="0.18"/><circle cx="124.7" cy="157.4" r="2.5" fill="#B98A5A" opacity="0.18"/><circle cx="109.9" cy="150.1" r="3.3" fill="#B98A5A" opacity="0.18"/><circle cx="131.5" cy="142.3" r="3.1" fill="#B98A5A" opacity="0.18"/><circle cx="116.9" cy="159.8" r="3.6" fill="#B98A5A" opacity="0.18"/><circle cx="112.2" cy="118.7" r="3.9" fill="#B98A5A" opacity="0.18"/><circle cx="138.6" cy="129.0" r="3.2" fill="#B98A5A" opacity="0.18"/><circle cx="137.8" cy="138.9" r="3.9" fill="#B98A5A" opacity="0.18"/><circle cx="98.8" cy="132.7" r="4.2" fill="#B98A5A" opacity="0.18"/><circle cx="148.8" cy="127.0" r="4.0" fill="#B98A5A" opacity="0.18"/><circle cx="121.7" cy="129.7" r="3.5" fill="#B98A5A" opacity="0.18"/></g>
+    <g><g><ellipse cx="40" cy="128" rx="8" ry="8" fill="#F6E3C3"/><circle cx="47.8" cy="129.6" r="6.8" fill="#F6E3C3"/><circle cx="45.0" cy="134.3" r="8.0" fill="#F6E3C3"/><circle cx="39.8" cy="136.0" r="9.2" fill="#F6E3C3"/><circle cx="34.7" cy="134.0" r="7.4" fill="#F6E3C3"/><circle cx="32.1" cy="129.2" r="8.6" fill="#F6E3C3"/><circle cx="33.2" cy="123.8" r="6.8" fill="#F6E3C3"/><circle cx="37.5" cy="120.4" r="8.0" fill="#F6E3C3"/><circle cx="42.9" cy="120.6" r="9.2" fill="#F6E3C3"/><circle cx="47.0" cy="124.2" r="7.4" fill="#F6E3C3"/><circle cx="33.4" cy="127.8" r="5.9" fill="#FFF3DC" opacity="0.40"/><circle cx="42.4" cy="123.5" r="6.2" fill="#FFF3DC" opacity="0.40"/><circle cx="37.6" cy="122.7" r="4.2" fill="#FFF3DC" opacity="0.40"/><circle cx="42.4" cy="128.5" r="4.6" fill="#FFF3DC" opacity="0.40"/><circle cx="45.2" cy="132.1" r="5.2" fill="#FFF3DC" opacity="0.40"/><circle cx="36.3" cy="124.1" r="5.5" fill="#FFF3DC" opacity="0.40"/><circle cx="38.4" cy="128.1" r="5.9" fill="#FFF3DC" opacity="0.40"/><circle cx="39.9" cy="123.4" r="5.1" fill="#FFF3DC" opacity="0.40"/><circle cx="38.9" cy="126.3" r="5.7" fill="#FFF3DC" opacity="0.40"/><circle cx="40.0" cy="130.8" r="3.0" fill="#B98A5A" opacity="0.18"/><circle cx="39.5" cy="124.5" r="4.0" fill="#B98A5A" opacity="0.18"/><circle cx="45.1" cy="127.2" r="3.3" fill="#B98A5A" opacity="0.18"/><circle cx="33.8" cy="128.8" r="4.0" fill="#B98A5A" opacity="0.18"/></g></g>
+  </g>
+  <g><ellipse cx="178" cy="166" rx="11" ry="8" fill="#DDB583"/><circle cx="188.8" cy="167.6" r="5.1" fill="#DDB583"/><circle cx="184.1" cy="172.7" r="6.0" fill="#DDB583"/><circle cx="175.8" cy="173.8" r="6.9" fill="#DDB583"/><circle cx="168.8" cy="170.4" r="5.5" fill="#DDB583"/><circle cx="167.2" cy="164.4" r="6.4" fill="#DDB583"/><circle cx="171.9" cy="159.3" r="5.1" fill="#DDB583"/><circle cx="180.2" cy="158.2" r="6.0" fill="#DDB583"/><circle cx="187.2" cy="161.6" r="6.9" fill="#DDB583"/></g>
+  <g><ellipse cx="198" cy="166" rx="11" ry="8" fill="#DDB583"/><circle cx="208.8" cy="167.6" r="5.1" fill="#DDB583"/><circle cx="204.1" cy="172.7" r="6.0" fill="#DDB583"/><circle cx="195.8" cy="173.8" r="6.9" fill="#DDB583"/><circle cx="188.8" cy="170.4" r="5.5" fill="#DDB583"/><circle cx="187.2" cy="164.4" r="6.4" fill="#DDB583"/><circle cx="191.9" cy="159.3" r="5.1" fill="#DDB583"/><circle cx="200.2" cy="158.2" r="6.0" fill="#DDB583"/><circle cx="207.2" cy="161.6" r="6.9" fill="#DDB583"/></g>
+  <g><ellipse cx="172" cy="138" rx="29" ry="27" fill="#F6E3C3"/><circle cx="200.4" cy="143.4" r="11.0" fill="#F6E3C3"/><circle cx="196.1" cy="153.1" r="13.0" fill="#F6E3C3"/><circle cx="188.0" cy="160.5" r="14.9" fill="#F6E3C3"/><circle cx="177.6" cy="164.5" r="12.0" fill="#F6E3C3"/><circle cx="166.2" cy="164.5" r="14.0" fill="#F6E3C3"/><circle cx="155.8" cy="160.4" r="11.0" fill="#F6E3C3"/><circle cx="147.8" cy="152.9" r="13.0" fill="#F6E3C3"/><circle cx="143.5" cy="143.2" r="14.9" fill="#F6E3C3"/><circle cx="143.6" cy="132.6" r="12.0" fill="#F6E3C3"/><circle cx="147.9" cy="122.9" r="14.0" fill="#F6E3C3"/><circle cx="156.0" cy="115.5" r="11.0" fill="#F6E3C3"/><circle cx="166.4" cy="111.5" r="13.0" fill="#F6E3C3"/><circle cx="177.8" cy="111.5" r="14.9" fill="#F6E3C3"/><circle cx="188.2" cy="115.6" r="12.0" fill="#F6E3C3"/><circle cx="196.2" cy="123.1" r="14.0" fill="#F6E3C3"/><circle cx="200.5" cy="132.8" r="11.0" fill="#F6E3C3"/><circle cx="157.3" cy="125.7" r="3.7" fill="#FFF3DC" opacity="0.40"/><circle cx="178.8" cy="146.4" r="5.7" fill="#FFF3DC" opacity="0.40"/><circle cx="165.9" cy="153.9" r="3.5" fill="#FFF3DC" opacity="0.40"/><circle cx="182.8" cy="142.0" r="5.5" fill="#FFF3DC" opacity="0.40"/><circle cx="164.7" cy="120.2" r="4.4" fill="#FFF3DC" opacity="0.40"/><circle cx="156.2" cy="136.5" r="4.9" fill="#FFF3DC" opacity="0.40"/><circle cx="190.6" cy="153.9" r="4.1" fill="#FFF3DC" opacity="0.40"/><circle cx="197.9" cy="134.7" r="3.6" fill="#FFF3DC" opacity="0.40"/><circle cx="149.1" cy="143.6" r="6.4" fill="#FFF3DC" opacity="0.40"/><circle cx="160.9" cy="141.4" r="4.1" fill="#FFF3DC" opacity="0.40"/><circle cx="181.8" cy="134.8" r="5.2" fill="#FFF3DC" opacity="0.40"/><circle cx="182.8" cy="150.4" r="6.4" fill="#FFF3DC" opacity="0.40"/><circle cx="187.9" cy="154.3" r="5.0" fill="#FFF3DC" opacity="0.40"/><circle cx="188.0" cy="125.2" r="4.2" fill="#FFF3DC" opacity="0.40"/><circle cx="185.1" cy="128.9" r="3.6" fill="#FFF3DC" opacity="0.40"/><circle cx="188.5" cy="138.3" r="4.9" fill="#FFF3DC" opacity="0.40"/><circle cx="168.3" cy="148.2" r="3.2" fill="#B98A5A" opacity="0.18"/><circle cx="161.6" cy="159.9" r="2.5" fill="#B98A5A" opacity="0.18"/><circle cx="172.1" cy="114.0" r="2.7" fill="#B98A5A" opacity="0.18"/><circle cx="192.7" cy="128.4" r="4.3" fill="#B98A5A" opacity="0.18"/><circle cx="168.0" cy="152.7" r="3.3" fill="#B98A5A" opacity="0.18"/><circle cx="192.7" cy="137.9" r="3.2" fill="#B98A5A" opacity="0.18"/><circle cx="159.1" cy="143.8" r="2.6" fill="#B98A5A" opacity="0.18"/><circle cx="192.6" cy="152.2" r="3.1" fill="#B98A5A" opacity="0.18"/></g>
+  <g><ellipse cx="168" cy="114" rx="18" ry="7" fill="#F6E3C3"/><circle cx="185.6" cy="115.4" r="7.6" fill="#F6E3C3"/><circle cx="177.9" cy="119.8" r="9.0" fill="#F6E3C3"/><circle cx="164.4" cy="120.9" r="10.3" fill="#F6E3C3"/><circle cx="153.0" cy="117.9" r="8.3" fill="#F6E3C3"/><circle cx="150.4" cy="112.6" r="9.7" fill="#F6E3C3"/><circle cx="158.1" cy="108.2" r="7.6" fill="#F6E3C3"/><circle cx="171.6" cy="107.1" r="9.0" fill="#F6E3C3"/><circle cx="183.0" cy="110.1" r="10.3" fill="#F6E3C3"/><circle cx="174.4" cy="112.9" r="4.3" fill="#FFF3DC" opacity="0.40"/><circle cx="161.9" cy="113.8" r="4.6" fill="#FFF3DC" opacity="0.40"/><circle cx="183.0" cy="112.4" r="5.9" fill="#FFF3DC" opacity="0.40"/><circle cx="157.2" cy="109.5" r="6.3" fill="#FFF3DC" opacity="0.40"/><circle cx="155.3" cy="112.4" r="3.6" fill="#FFF3DC" opacity="0.40"/><circle cx="166.9" cy="110.3" r="5.8" fill="#FFF3DC" opacity="0.40"/><circle cx="163.4" cy="111.7" r="3.6" fill="#FFF3DC" opacity="0.40"/><circle cx="172.8" cy="113.1" r="4.9" fill="#FFF3DC" opacity="0.40"/><circle cx="162.9" cy="117.0" r="4.0" fill="#B98A5A" opacity="0.18"/><circle cx="176.6" cy="113.5" r="3.8" fill="#B98A5A" opacity="0.18"/><circle cx="164.1" cy="118.6" r="3.3" fill="#B98A5A" opacity="0.18"/><circle cx="171.7" cy="116.5" r="2.9" fill="#B98A5A" opacity="0.18"/></g>
+  <g><ellipse cx="196" cy="152" rx="12" ry="9" fill="#FBEFD9"/><circle cx="207.8" cy="153.8" r="5.1" fill="#FBEFD9"/><circle cx="203.5" cy="159.0" r="6.0" fill="#FBEFD9"/><circle cx="195.7" cy="161.0" r="6.9" fill="#FBEFD9"/><circle cx="188.1" cy="158.7" r="5.5" fill="#FBEFD9"/><circle cx="184.1" cy="153.3" r="6.4" fill="#FBEFD9"/><circle cx="185.8" cy="147.3" r="5.1" fill="#FBEFD9"/><circle cx="192.2" cy="143.5" r="6.0" fill="#FBEFD9"/><circle cx="200.4" cy="143.6" r="6.9" fill="#FBEFD9"/><circle cx="206.5" cy="147.7" r="5.5" fill="#FBEFD9"/></g>
+  <ellipse cx="207" cy="148" rx="6" ry="4.6" fill="#4A403B"/><circle cx="205.5" cy="146.8" r="1.4" fill="#fff" opacity=".7"/>
+  <path d="M176 138 Q184 145 192 138" fill="none" stroke="#2E2420" stroke-width="3.2" stroke-linecap="round"/>
+  <g><ellipse cx="184" cy="128" rx="13" ry="6" fill="#F6E3C3"/><circle cx="196.7" cy="129.2" r="6.0" fill="#F6E3C3"/><circle cx="189.9" cy="133.3" r="7.0" fill="#F6E3C3"/><circle cx="178.6" cy="133.5" r="8.0" fill="#F6E3C3"/><circle cx="171.4" cy="129.5" r="6.5" fill="#F6E3C3"/><circle cx="173.6" cy="124.4" r="7.5" fill="#F6E3C3"/><circle cx="183.7" cy="122.0" r="6.0" fill="#F6E3C3"/><circle cx="194.0" cy="124.1" r="7.0" fill="#F6E3C3"/></g>
+  <g><ellipse cx="152" cy="150" rx="11" ry="18" fill="#C89C69"/><circle cx="162.8" cy="153.6" r="6.8" fill="#C89C69"/><circle cx="159.4" cy="163.3" r="8.0" fill="#C89C69"/><circle cx="153.3" cy="167.9" r="9.2" fill="#C89C69"/><circle cx="146.6" cy="165.7" r="7.4" fill="#C89C69"/><circle cx="142.0" cy="157.5" r="8.6" fill="#C89C69"/><circle cx="141.2" cy="146.4" r="6.8" fill="#C89C69"/><circle cx="144.6" cy="136.7" r="8.0" fill="#C89C69"/><circle cx="150.7" cy="132.1" r="9.2" fill="#C89C69"/><circle cx="157.4" cy="134.3" r="7.4" fill="#C89C69"/><circle cx="162.0" cy="142.5" r="8.6" fill="#C89C69"/><circle cx="157.2" cy="144.3" r="4.2" fill="#E4C097" opacity="0.40"/><circle cx="160.7" cy="140.5" r="4.8" fill="#E4C097" opacity="0.40"/><circle cx="154.4" cy="154.8" r="3.8" fill="#E4C097" opacity="0.40"/><circle cx="150.4" cy="154.0" r="4.2" fill="#E4C097" opacity="0.40"/><circle cx="151.6" cy="161.3" r="6.2" fill="#E4C097" opacity="0.40"/><circle cx="152.0" cy="140.8" r="4.7" fill="#E4C097" opacity="0.40"/><circle cx="146.8" cy="148.7" r="4.5" fill="#E4C097" opacity="0.40"/><circle cx="156.2" cy="152.8" r="6.4" fill="#E4C097" opacity="0.40"/><circle cx="156.5" cy="157.4" r="5.4" fill="#E4C097" opacity="0.40"/><circle cx="154.6" cy="145.1" r="4.3" fill="#E4C097" opacity="0.40"/><circle cx="152.1" cy="160.4" r="3.4" fill="#B98A5A" opacity="0.18"/><circle cx="161.4" cy="145.4" r="4.2" fill="#B98A5A" opacity="0.18"/><circle cx="155.5" cy="150.8" r="3.9" fill="#B98A5A" opacity="0.18"/><circle cx="157.5" cy="143.1" r="3.7" fill="#B98A5A" opacity="0.18"/><circle cx="158.3" cy="150.0" r="4.4" fill="#B98A5A" opacity="0.18"/></g>
+  <g font-family="sans-serif" font-weight="900" fill="var(--muted)">
+    <text class="zz" x="200" y="108" font-size="22">z</text>
+    <text class="zz zz2" x="216" y="90" font-size="16">z</text>
+  </g>
+</g>
+    </svg>
+    <p class="status" id="status">おやすみ中</p>
+    <p class="clock" id="clock">0:00</p>
+    <p class="sub" id="sub">&nbsp;</p>
+    <div class="bar" id="barWrap"><i id="bar"></i></div>
+  </section>
+
+  <div class="actions">
+    <button class="btn primary" id="btnToggle">勉強開始</button>
+  </div>
+
+  <section>
+    <div class="month-head">
+      <button class="nav" id="prev" aria-label="前の月">◀</button>
+      <h2 id="monthTitle"></h2>
+      <button class="nav" id="next" aria-label="次の月">▶</button>
+    </div>
+    <div class="totals">
+      <div><div class="n" id="tDays">0</div><div class="l">勉強した日</div></div>
+      <div><div class="n" id="tHours">0:00</div><div class="l">合計時間</div></div>
+      <div><div class="n" id="tAvg">0:00</div><div class="l">1日の平均</div></div>
+    </div>
+    <ul class="days" id="days"></ul>
+    <button class="btn add" id="btnAdd">日付を指定して記録を追加</button>
+  </section>
+
+  <section class="settings">
+    <h2>設定</h2>
+    <div class="field"><label for="setGoal">1日の目標(時間)</label><input id="setGoal" type="number" min="0" max="24" step="0.5" inputmode="decimal"></div>
+    <p class="sub">データはこの端末のブラウザにだけ保存されます。</p>
+  </section>
+</main>
+
+<div class="scrim" id="scrim">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h3 id="sheetTitle">記録を編集</h3>
+    <div class="field"><label for="fDate">日付</label><input id="fDate" type="date"></div>
+    <div class="two">
+      <div class="field"><label for="fStart">開始</label><input id="fStart" type="time"></div>
+      <div class="field"><label for="fEnd">終了</label><input id="fEnd" type="time"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn danger" id="fDel">削除</button>
+      <button class="btn" id="fCancel">閉じる</button>
+      <button class="btn primary" id="fSave">保存</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  var KEY = "inu-benkyo:v1";
+  // records: { "YYYY-MM-DD": [ {start:"HH:MM", end:"HH:MM", min:Number} ] }
+  var state = { records: {}, goal: 2, active: null };
+  var view = new Date(); view.setDate(1);
+  var $ = function (id) { return document.getElementById(id); };
+  var WD = ["日", "月", "火", "水", "木", "金", "土"];
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var d = JSON.parse(raw);
+        if (d && typeof d === "object") {
+          state.records = d.records || {};
+          state.goal = Number(d.goal) >= 0 ? Number(d.goal) : 2;
+          state.active = d.active && typeof d.active.ts === "number" ? d.active : null;
+        }
+      }
+    } catch (e) {}
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast("この端末では保存できませんでした"); }
+  }
+
+  function p2(n) { return (n < 10 ? "0" : "") + n; }
+  function dkey(d) { return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()); }
+  function hm(d) { return p2(d.getHours()) + ":" + p2(d.getMinutes()); }
+  function toMin(s) { var a = s.split(":"); return Number(a[0]) * 60 + Number(a[1]); }
+  function fmt(min) { var m = Math.max(0, Math.round(min)); return Math.floor(m / 60) + ":" + p2(m % 60); }
+  function fmtSec(sec) { sec = Math.max(0, Math.floor(sec)); return Math.floor(sec / 3600) + ":" + p2(Math.floor(sec % 3600 / 60)) + ":" + p2(sec % 60); }
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove("show"); }, 1800);
+  }
+  function dayTotal(key) {
+    return (state.records[key] || []).reduce(function (a, s) { return a + (s.min || 0); }, 0);
+  }
+  function addSession(key, s) {
+    (state.records[key] = state.records[key] || []).push(s);
+    state.records[key].sort(function (a, b) { return a.start < b.start ? -1 : 1; });
+  }
+
+  function renderHero() {
+    var now = new Date(), dog = $("dog");
+    var todayMin = dayTotal(dkey(now));
+    var goalMin = state.goal * 60;
+    if (state.active) {
+      var sec = (Date.now() - state.active.ts) / 1000;
+      dog.dataset.state = "walk";
+      $("status").textContent = "勉強中";
+      $("clock").textContent = fmtSec(sec);
+      $("sub").textContent = hm(new Date(state.active.ts)) + " に開始・今日はここまで " + fmt(todayMin);
+      $("btnToggle").textContent = "勉強終了";
+      $("btnToggle").className = "btn";
+      todayMin += sec / 60;
+    } else {
+      dog.dataset.state = "sleep";
+      $("status").textContent = "おやすみ中";
+      $("clock").textContent = fmt(todayMin);
+      $("sub").textContent = todayMin ? "今日の勉強時間" : "今日はまだ勉強していません";
+      $("btnToggle").textContent = "勉強開始";
+      $("btnToggle").className = "btn primary";
+    }
+    var show = goalMin > 0;
+    $("barWrap").style.display = show ? "block" : "none";
+    if (show) $("bar").style.width = Math.min(100, todayMin / goalMin * 100) + "%";
+  }
+
+  function renderMonth() {
+    var y = view.getFullYear(), m = view.getMonth();
+    $("monthTitle").textContent = y + "年" + (m + 1) + "月";
+    var days = new Date(y, m + 1, 0).getDate(), total = 0, count = 0, items = [];
+    for (var d = days; d >= 1; d--) {
+      var key = y + "-" + p2(m + 1) + "-" + p2(d), list = state.records[key];
+      if (!list || !list.length) continue;
+      var t = dayTotal(key); total += t; count++;
+      items.push({ key: key, d: d, list: list, t: t });
+    }
+    $("tDays").textContent = count;
+    $("tHours").textContent = fmt(total);
+    $("tAvg").textContent = fmt(count ? total / count : 0);
+    var ul = $("days"); ul.innerHTML = "";
+    if (!items.length) {
+      var li = document.createElement("li"); li.className = "empty";
+      li.textContent = "この月の記録はまだありません。勉強開始を押してみましょう。";
+      ul.appendChild(li); return;
+    }
+    items.forEach(function (it) {
+      var dow = new Date(y, m, it.d).getDay();
+      var li = document.createElement("li"); li.className = "day";
+      var head = document.createElement("div"); head.className = "day-head";
+      head.innerHTML = "<span>" + (m + 1) + "/" + it.d + "<small>" + WD[dow] + "曜</small></span><span class=\"tot\">" + fmt(it.t) + "</span>";
+      li.appendChild(head);
+      it.list.forEach(function (s, i) {
+        var b = document.createElement("button"); b.className = "sess";
+        b.dataset.key = it.key; b.dataset.i = i;
+        b.innerHTML = "<span>" + s.start + " – " + s.end + "</span><span>" + fmt(s.min) + "</span>";
+        li.appendChild(b);
+      });
+      ul.appendChild(li);
+    });
+  }
+
+  function renderAll() { renderHero(); renderMonth(); }
+
+  $("btnToggle").addEventListener("click", function () {
+    if (state.active) {
+      var start = new Date(state.active.ts), now = new Date();
+      var min = Math.max(1, Math.round((now - start) / 60000));
+      addSession(dkey(start), { start: hm(start), end: hm(now), min: min });
+      state.active = null; save(); renderAll(); toast("記録しました(" + fmt(min) + ")");
+    } else {
+      state.active = { ts: Date.now() }; save(); renderAll();
+    }
+  });
+  $("prev").addEventListener("click", function () { view.setMonth(view.getMonth() - 1); renderMonth(); });
+  $("next").addEventListener("click", function () { view.setMonth(view.getMonth() + 1); renderMonth(); });
+
+  // Edit sheet
+  var editing = null; // {key, i}
+  function openSheet(key, i) {
+    var s = key ? state.records[key][i] : null;
+    editing = key ? { key: key, i: i } : null;
+    $("sheetTitle").textContent = key ? "記録を編集" : "記録を追加";
+    $("fDate").value = key || dkey(new Date());
+    $("fStart").value = s ? s.start : "";
+    $("fEnd").value = s ? s.end : "";
+    $("fDel").style.visibility = key ? "visible" : "hidden";
+    $("scrim").classList.add("open");
+    $("fStart").focus();
+  }
+  function closeSheet() { $("scrim").classList.remove("open"); }
+  $("days").addEventListener("click", function (e) {
+    var b = e.target.closest(".sess"); if (b) openSheet(b.dataset.key, Number(b.dataset.i));
+  });
+  $("btnAdd").addEventListener("click", function () { openSheet(null); });
+  $("fCancel").addEventListener("click", closeSheet);
+  $("scrim").addEventListener("click", function (e) { if (e.target === $("scrim")) closeSheet(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
+  $("fSave").addEventListener("click", function () {
+    var k = $("fDate").value, s = $("fStart").value, en = $("fEnd").value;
+    if (!k) { toast("日付を選んでください"); return; }
+    if (!s || !en) { toast("開始と終了の時刻を入力してください"); return; }
+    var a = toMin(s), b = toMin(en); if (b < a) b += 1440;
+    if (b === a) { toast("開始と終了が同じです"); return; }
+    if (editing) {
+      state.records[editing.key].splice(editing.i, 1);
+      if (!state.records[editing.key].length) delete state.records[editing.key];
+    }
+    addSession(k, { start: s, end: en, min: b - a });
+    save(); closeSheet();
+    var d = k.split("-"); view = new Date(Number(d[0]), Number(d[1]) - 1, 1);
+    renderAll(); toast("保存しました");
+  });
+  $("fDel").addEventListener("click", function () {
+    if (!editing || !confirm("この記録を削除しますか?")) return;
+    state.records[editing.key].splice(editing.i, 1);
+    if (!state.records[editing.key].length) delete state.records[editing.key];
+    save(); closeSheet(); renderAll(); toast("削除しました");
+  });
+
+  $("setGoal").addEventListener("change", function () {
+    var v = Number(this.value);
+    if (v >= 0 && v <= 24) { state.goal = v; save(); renderHero(); } else this.value = state.goal;
+  });
+
+  load();
+  $("setGoal").value = state.goal;
+  renderAll();
+  setInterval(renderHero, 1000);
+})();
+</script>
+</body>
+</html>
